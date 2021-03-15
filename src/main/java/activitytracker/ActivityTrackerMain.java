@@ -23,16 +23,17 @@ public class ActivityTrackerMain {
         }
     }
 
-    private Activity selectActivityByPreparadStatement(PreparedStatement stmt){
+    private List<Activity> selectActivityByPreparadStatement(PreparedStatement stmt){
         try(ResultSet rs = stmt.executeQuery()){
-            if (rs.next()){
+            List<Activity> result = new ArrayList<>();
+            while (rs.next()){
                 Activity activity = new Activity(rs.getLong("id"),
                         rs.getTimestamp("start_time").toLocalDateTime(),
                         rs.getString("activity_desc"),
                         ActivityType.valueOf(rs.getString("activity_type")));
-                return activity;
+                result.add(activity);
             }
-            throw new IllegalArgumentException("invalid id!");
+            return result;
         }
         catch(SQLException sqle){
             throw new IllegalStateException("Excecute failed!", sqle);
@@ -46,7 +47,12 @@ public class ActivityTrackerMain {
                 ){
             stmt.setLong(1, id);
 
-            return selectActivityByPreparadStatement(stmt);
+            List<Activity> result = selectActivityByPreparadStatement(stmt);
+
+            if(result.size() == 1){
+                return result.get(0);
+            }
+            throw new IllegalArgumentException("Wrong id!");
         } catch (SQLException sqle) {
             throw new IllegalStateException("Connection failed!", sqle);
         }
@@ -54,18 +60,11 @@ public class ActivityTrackerMain {
 
     public List<Activity> selectAllActivities(DataSource dataSource){
         try (Connection conn = dataSource.getConnection();
-            PreparedStatement stmt = conn.prepareStatement("select * from activities");
-            ResultSet rs = stmt.executeQuery()){
-            List<Activity> result = new ArrayList<>();
-            while(rs.next()){
-                Activity activity = new Activity(rs.getLong("id"),
-                        rs.getTimestamp("start_time").toLocalDateTime(),
-                        rs.getString("activity_desc"),
-                        ActivityType.valueOf(rs.getString("activity_type")));
-                result.add(activity);
-            }
-            return result;
-        } catch (SQLException sqle){
+            PreparedStatement stmt = conn.prepareStatement("select * from activities")){
+
+            return selectActivityByPreparadStatement(stmt);
+
+                    } catch (SQLException sqle){
             throw new IllegalStateException("Cannot excecute!");
         }
     }
