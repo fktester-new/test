@@ -21,23 +21,30 @@ public class ActivityTrackerMain {
         }
     }
 
+    private Activity selectActivityByPreparadStatement(PreparedStatement stmt){
+        try(ResultSet rs = stmt.executeQuery()){
+            if (rs.next()){
+                Activity activity = new Activity(rs.getLong("id"),
+                        rs.getTimestamp("start_time").toLocalDateTime(),
+                        rs.getString("activity_desc"),
+                        ActivityType.valueOf(rs.getString("activity_type")));
+                return activity;
+            }
+            throw new IllegalArgumentException("invalid id!");
+        }
+        catch(SQLException sqle){
+            throw new IllegalStateException("Excecute failed!", sqle);
+        }
+    }
+
     public Activity selectActivityById(DataSource dataSource, long id){
         try (
                 Connection conn = dataSource.getConnection();
                 PreparedStatement stmt = conn.prepareStatement("select * from activities where id = ?")
                 ){
             stmt.setLong(1, id);
-            try(ResultSet rs = stmt.executeQuery()){
-                if (rs.next()){
-                    Activity activity = new Activity(rs.getLong("id"),
-                            rs.getTimestamp("start_time").toLocalDateTime(),
-                            rs.getString("activity_desc"),
-                            ActivityType.valueOf(rs.getString("activity_type")));
-                    return activity;
-                }
-                throw new IllegalArgumentException("invalid id!");
-            }
 
+            return selectActivityByPreparadStatement(stmt);
         } catch (SQLException sqle) {
             throw new IllegalStateException("Connection failed!", sqle);
         }
