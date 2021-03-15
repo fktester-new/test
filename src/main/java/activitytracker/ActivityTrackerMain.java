@@ -41,5 +41,8 @@ public class ActivityTrackerMain {
 
         ActivityTrackerMain activityTrackerMain = new ActivityTrackerMain();
         activityTrackerMain.insertActivity(dataSource, activity);
+        activityTrackerMain.insertActivity(dataSource, activity2);
+        activityTrackerMain.insertActivity(dataSource, activity3);
+
     }
 }
