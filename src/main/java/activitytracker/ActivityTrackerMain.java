@@ -3,10 +3,7 @@ package activitytracker;
 import org.mariadb.jdbc.MariaDbDataSource;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.sql.Timestamp;
+import java.sql.*;
 import java.time.LocalDateTime;
 
 public class ActivityTrackerMain {
@@ -21,6 +18,28 @@ public class ActivityTrackerMain {
             stmt.executeUpdate();
         } catch (SQLException se) {
             throw new IllegalStateException("Can not connect", se);
+        }
+    }
+
+    public Activity selectActivityById(DataSource dataSource, long id){
+        try (
+                Connection conn = dataSource.getConnection();
+                PreparedStatement stmt = conn.prepareStatement("select * from activities where id = ?")
+                ){
+            stmt.setLong(1, id);
+            try(ResultSet rs = stmt.executeQuery()){
+                if (rs.next()){
+                    Activity activity = new Activity(rs.getLong("id"),
+                            rs.getTimestamp("start_time").toLocalDateTime(),
+                            rs.getString("activity_desc"),
+                            ActivityType.valueOf(rs.getString("activity_type")));
+                    return activity;
+                }
+                throw new IllegalArgumentException("invalid id!");
+            }
+
+        } catch (SQLException sqle) {
+            throw new IllegalStateException("Connection failed!", sqle);
         }
     }
 
@@ -43,6 +62,6 @@ public class ActivityTrackerMain {
         activityTrackerMain.insertActivity(dataSource, activity);
         activityTrackerMain.insertActivity(dataSource, activity2);
         activityTrackerMain.insertActivity(dataSource, activity3);
-
+        System.out.println(activityTrackerMain.selectActivityById(dataSource, 3));
     }
 }
